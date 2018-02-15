@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_prefix")
+load("@bazel_gazelle//:def.bzl", "gazelle")
+
+go_prefix("github.com/astratto/test-bazel")
+
+gazelle(
+    name = "gazelle",
+    prefix = "github.com/astratto/test-bazel",
+)
+
+go_library(
+    name = "go_default_library",
+    srcs = ["stamping.go"],
+    importpath = "github.com/astratto/test-bazel",
+    visibility = ["//visibility:public"],
+    x_defs = {
+        "github.com/astratto/test-bazel.ExposedValue": "{STABLE_EXPOSED_VALUE}",
+    },
+)

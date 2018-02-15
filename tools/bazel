@@ -1,0 +1,35 @@
+#!/bin/bash
+#
+# Wrapper for Bazel to test how running gazelle affects the analysis phase in Bazel
+set -euo pipefail
+
+timestamp() {
+    date +"%Y-%m-%d %H:%M:%S"
+}
+
+# Build and test commands use BUILD.bazel files, so we make sure they are up to date
+if [[ $1 == "build" || $1 == "test" ]]; then
+    echo "[$(timestamp)] - Generating BUILD.bazel"
+    bazel-real run :gazelle
+
+    # Retrieve time for the only BUILD.bazel file of the project
+    echo "[$(timestamp)] - Changing time for testapp/BUILD.bazel"
+    echo "PRE mtime: `stat -c "%y" testapp/BUILD.bazel`"
+    echo "PRE birth: `stat -c "%w" testapp/BUILD.bazel`"
+    echo "PRE last access: `stat -c "%x" testapp/BUILD.bazel`"
+    echo "PRE last status change: `stat -c "%z" testapp/BUILD.bazel`"
+
+    # Change access and mtime of the file
+    touch -amt 201801010000 testapp/BUILD.bazel
+
+    # Uncomment this to use root to change system date and last status change timestamp
+    #sudo -- sh -c 'NOW=$(date); echo $NOW; date --set "2018-01-01 00:00:00"; touch testapp/BUILD.bazel; date -s "$NOW"'
+
+    echo "POST mtime: `stat -c "%y" testapp/BUILD.bazel`"
+    echo "POST birth: `stat -c "%w" testapp/BUILD.bazel`"
+    echo "POST last access: `stat -c "%x" testapp/BUILD.bazel`"
+    echo "POST last status change: `stat -c "%z" testapp/BUILD.bazel`"
+fi
+
+echo "[$(timestamp)] - Starting bazel ${*}"
+bazel-real $*
